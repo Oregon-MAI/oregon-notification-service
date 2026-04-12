@@ -1,26 +1,35 @@
-import asyncio
+from asyncio import Queue
 from uuid import UUID
 
-user_messages: dict[UUID, asyncio.Queue] = {}
+from src.repositories.message_repository import get_messages_by_user_id
 
-async def get_queue(user_id: UUID) -> asyncio.Queue:
-    if user_id not in user_messages:
-        user_messages[user_id] = asyncio.Queue()
-    return user_messages[user_id]
+user_messages: dict[UUID, list[Queue]] = {}
+
 
 async def send(user_id: UUID, message: str):
     if user_id not in user_messages:
-        user_messages[user_id] = asyncio.Queue()
-    await user_messages[user_id].put(message)
+        user_messages[user_id] = []
+    for q in user_messages[user_id]:
+        await q.put(message)
 
 
-async def get_notifications(user_id, request):
-    queue = await get_queue(user_id)
+async def get_notifications(user_id: UUID, request):
+    history = await get_messages_by_user_id(user_id)
+    for msg in history:
+        yield 'data: '+msg.text+'\n\n'
+
+    msgs = Queue()
+    if user_id not in user_messages:
+        user_messages[user_id] = []
+    user_messages[user_id].append(msgs)
+
     try:
         while True:
             if await request.is_disconnected():
                 break
-            data = await queue.get()
-            yield "data: "+str(data)+"\n\n"
+
+            msg = await msgs.get()
+            yield 'data:'+ msg+'\n\n'
+
     finally:
-        print('close')
+        user_messages[user_id].remove(msgs)

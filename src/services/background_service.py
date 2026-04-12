@@ -1,22 +1,25 @@
 import asyncio
 import json
+import uuid
 from contextlib import asynccontextmanager
 from uuid import UUID
 from aiokafka import AIOKafkaConsumer
 from fastapi import FastAPI
+
+from src.data.models.message import Message
+from src.repositories.message_repository import insert_message
 from src.services.connection_service import send
 from src.constants import KAFKA_GROUP_ID, CONSUME_TOPICS, KAFKA_BOOTSTRAP_SERVERS
 from src.services.messages_service import create_message
 
 @asynccontextmanager
 async def background(app: FastAPI):
-    task = asyncio.create_task(background_task())
+    tasks = [
+        asyncio.create_task(background_task()),
+    ]
     yield
-    task.cancel()
-    try:
-        await task
-    except Exception:
-        print('bg cancel')
+    for task in tasks:
+        task.cancel()
 
 async def start_consumer() -> AIOKafkaConsumer:
     consumer = AIOKafkaConsumer(
@@ -55,6 +58,8 @@ async def background_task() -> None:
 
                 id = UUID(decoded_msg.get('to_user'))
                 text = await create_message(decoded_msg)
+
+                await insert_message(Message(id=uuid.uuid4(), text=text,user_id=id))
                 await send(id, text)
                 await consumer.commit()
 
