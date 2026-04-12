@@ -1,7 +1,7 @@
 from uuid import UUID
 from fastapi import Request, APIRouter
 from starlette.responses import StreamingResponse
-from services.connection_service import get_notifications
+from src.services.connection_service import get_notifications
 
 router = APIRouter(prefix="/notifications")
 

@@ -1,9 +1,22 @@
+import asyncio
 import json
+from contextlib import asynccontextmanager
 from uuid import UUID
 from aiokafka import AIOKafkaConsumer
-from services.connection_service import send
-from constants import KAFKA_GROUP_ID, CONSUME_TOPICS, KAFKA_BOOTSTRAP_SERVERS
-from services.messages_service import create_message
+from fastapi import FastAPI
+from src.services.connection_service import send
+from src.constants import KAFKA_GROUP_ID, CONSUME_TOPICS, KAFKA_BOOTSTRAP_SERVERS
+from src.services.messages_service import create_message
+
+@asynccontextmanager
+async def background(app: FastAPI):
+    task = asyncio.create_task(background_task())
+    yield
+    task.cancel()
+    try:
+        await task
+    except Exception:
+        print('bg cancel')
 
 async def start_consumer() -> AIOKafkaConsumer:
     consumer = AIOKafkaConsumer(
@@ -23,6 +36,19 @@ async def background_task() -> None:
         async for message in consumer:
             try:
                 topic_name = message.topic
+
+                #добавить обработку сообщений в зависимости от топика
+                if(topic_name == CONSUME_TOPICS[0]):
+                    pass
+                elif topic_name == CONSUME_TOPICS[1]:
+                    pass
+                elif topic_name == CONSUME_TOPICS[2]:
+                    pass
+                elif topic_name == CONSUME_TOPICS[3]:
+                    pass
+                elif topic_name == CONSUME_TOPICS[4]:
+                    pass
+
                 raw_data = message.value.decode('utf-8')
                 print('msg: ' + str(raw_data),'topic: '+topic_name)
                 decoded_msg = json.loads(raw_data)

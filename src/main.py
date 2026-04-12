@@ -1,11 +1,8 @@
-import asyncio
-from contextlib import asynccontextmanager
-
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
-from api.routers.notification_router import router as router_socket
-from services.background_service import background_task
+from src.api.routers.notification_router import router as router_socket
+from src.services.background_service import background
 import logging
 
 logging.basicConfig(
@@ -15,17 +12,6 @@ logging.basicConfig(
     datefmt="%Y-%m-%d %H:%M:%S",
     format="[%(asctime)s] %(levelname)s %(message)s",
 )
-
-@asynccontextmanager
-async def background(app: FastAPI):
-    task = asyncio.create_task(background_task())
-    yield
-    task.cancel()
-    try:
-        await task
-    except Exception:
-        print('bg cancel')
-
 
 app = FastAPI(lifespan=background)
 
