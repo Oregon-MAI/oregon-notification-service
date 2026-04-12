@@ -16,3 +16,14 @@ services:
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+
+  notification:
+    build: .
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    depends_on:
+      - kafka
+    environment:
+      - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+      - TOPICS=user.book,admin.cancel,user.cancel,messages,admin.update

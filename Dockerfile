@@ -2,6 +2,12 @@ FROM python:3.14-rc-slim
 
 WORKDIR /app
 
-COPY src/ ./src/
+COPY pyproject.toml ./
 
-CMD ["python", "src/main.py"]
+RUN pip install --no-cache-dir .
+
+COPY src ./src
+
+EXPOSE 8000
+
+CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000"]
