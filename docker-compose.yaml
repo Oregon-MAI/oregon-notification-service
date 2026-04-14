@@ -40,5 +40,5 @@ services:
       - postgres-notification-service
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
-      - TOPICS=user.book,admin.cancel,user.cancel,messages,admin.update
+      - TOPICS=user.book,user.cancel,admin.cancel,admin.update,messages
       - DATABASE_URL=postgresql+asyncpg://postgres:root@postgres-notification-service:5432/postgres

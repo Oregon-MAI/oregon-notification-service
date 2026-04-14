@@ -1,3 +1,2 @@
-
-async def create_message(data) -> str:
-    return str(data)
+async def create_message(data: str) -> str:
+    return data

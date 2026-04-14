@@ -1,9 +1,10 @@
+import logging
+
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
 from src.api.routers.notification_router import router as router_socket
 from src.services.background_service import background
-import logging
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -16,7 +17,7 @@ logging.basicConfig(
 app = FastAPI(lifespan=background)
 
 app.add_middleware(
-    CORSMiddleware,
+    CORSMiddleware,  # type: ignore
     allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],

@@ -16,7 +16,7 @@ from src.data.models.message import Message
 config = context.config
 
 section = config.config_ini_section
-database_url = os.getenv("DATABASE_URL")
+database_url:str = os.getenv("DATABASE_URL",'')
 config.set_section_option(section, "sqlalchemy.url", database_url)
 
 # Interpret the config file for Python logging.
