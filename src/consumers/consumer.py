@@ -36,7 +36,7 @@ async def cons(topic: list[str]) -> None:
                 decoded_msg = json.loads(raw_data)
 
                 id = UUID(decoded_msg.get("to_user"))
-                text = await create_message(decoded_msg)
+                text = str(await create_message(decoded_msg))
 
                 await insert_message(Message(id=uuid.uuid4(), text=text, user_id=id))
                 await send(id, text)

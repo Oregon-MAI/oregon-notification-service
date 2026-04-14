@@ -2,7 +2,12 @@ FROM python:3.14-rc-slim
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y --no-install-recommends \ gcc \ python3-dev \ && rm -rf /var/lib/apt/lists/*
+RUN sed -i 's/deb.debian.org/mirror.yandex.ru/g' /etc/apt/sources.list.d/debian.sources
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc \
+    python3-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 COPY . .
 

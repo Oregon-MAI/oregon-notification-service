@@ -32,7 +32,7 @@ async def get_notifications(user_id: UUID, request: Request) -> AsyncGenerator[s
                 break
 
             msg = await msgs.get()
-            yield "data:" + msg + "\n\n"
+            yield "data: " + msg + "\n\n"
 
     finally:
         user_messages[user_id].remove(msgs)
