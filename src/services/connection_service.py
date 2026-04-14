@@ -4,7 +4,7 @@ from uuid import UUID
 
 from fastapi import Request
 
-from src.repositories.message_repository import get_messages_by_user_id
+from src.repositories.message_repository import delete_messages_by_user_id, get_messages_by_user_id
 
 user_messages: dict[UUID, list[Queue]] = {}
 
@@ -20,6 +20,8 @@ async def get_notifications(user_id: UUID, request: Request) -> AsyncGenerator[s
     history = await get_messages_by_user_id(user_id)
     for msg in history:
         yield "data: " + msg.text + "\n\n"
+
+    await delete_messages_by_user_id(user_id)
 
     msgs = Queue()
     if user_id not in user_messages:

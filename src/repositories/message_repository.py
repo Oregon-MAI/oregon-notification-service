@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 
 from src.constants import DB_URL
@@ -32,3 +32,8 @@ async def get_messages_by_user_id(user_id: UUID) -> list[Message]:
 async def insert_message(new_message: Message) -> None:
     async with async_session() as session, session.begin():
         session.add(new_message)
+
+
+async def delete_messages_by_user_id(user_id: UUID) -> None:
+    async with async_session() as session, session.begin():
+        await session.execute(delete(Message).where(Message.user_id == user_id))
