@@ -10,6 +10,8 @@ dependencies = [
     "asyncpg>=0.31.0",
     "confluent-kafka>=2.14.0",
     "fastapi>=0.135.3",
+    "httpx>=0.28.1",
+    "pytest-mock>=3.15.1",
     "python-dotenv>=1.2.2",
     "sqlalchemy>=2.0.0",
     "sse-starlette>=3.3.4",
@@ -20,10 +22,14 @@ dependencies = [
 dev = [
     "coverage>=7.13.4",
     "pytest>=9.0.2",
+    "pytest-asyncio>=0.23.0",
+    "httpx>=0.28.1",
     "pytest-cov>=7.0.0",
     "ruff>=0.15.5",
     "ty>=0.0.21",
 ]
+
+
 
 [tool.ruff]
 target-version = "py314"
@@ -38,9 +44,6 @@ exclude = [
     "migrations",
     "node_modules",
 ]
-
-[[tool.uv.index]]
-url = "https://pypi.doubanio.com/simple/"
 
 [tool.ruff.lint]
 select = [
@@ -61,15 +64,23 @@ select = [
     "ERA",
     "G",
 ]
-
 ignore = [
     "E501",
+    "ARG001",
 ]
-
 fixable = ["ALL"]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+addopts = "-v"
+
+[tool.pytest_asyncio]
+asyncio_mode = "auto"
+default_fixture_loop_scope = "function"
 
 [tool.ty.src]
 include = ["src", "tests"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
