@@ -20,6 +20,6 @@ COPY . .
 
 RUN pip install --no-cache-dir --default-timeout=100 .
 
-EXPOSE 8000
+EXPOSE 8003
 
-CMD ["sh", "-c", "sleep 20 && alembic -c src/alembic.ini revision --autogenerate -m 'auto' && alembic -c src/alembic.ini upgrade head && uvicorn src.main:app --host 0.0.0.0 --port 8000"]
+CMD ["sh", "-c", "sleep 20 && alembic -c src/alembic.ini revision --autogenerate -m 'auto' && alembic -c src/alembic.ini upgrade head && uvicorn src.main:app --host 0.0.0.0 --port 8003"]
