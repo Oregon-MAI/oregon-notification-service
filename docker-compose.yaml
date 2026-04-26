@@ -34,11 +34,15 @@ services:
     build: .
     restart: unless-stopped
     ports:
-      - "8000:8000"
+      - "8003:8003"
     depends_on:
       - kafka
       - postgres-notification-service
     environment:
       - KAFKA_BOOTSTRAP_SERVERS=kafka:29092
-      - TOPICS=user.book,user.cancel,admin.cancel,admin.update,messages
+      - USER_BOOK_TOPIC=user.book
+      - USER_CANCEL_TOPIC=user.cancel
+      - ADMIN_CANCEL_TOPIC=admin.cancel
+      - ADMIN_UPDATE_TOPIC=admin.update
+      - MESSAGES_TOPIC=messages
       - DATABASE_URL=postgresql+asyncpg://postgres:root@postgres-notification-service:5432/postgres
