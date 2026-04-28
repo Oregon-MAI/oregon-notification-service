@@ -1,5 +1,8 @@
 import os
 
+REDIS_PASS = os.getenv("REDIS_PASS")
+REDIS_URL = os.getenv("REDIS_URL")
+REDIS_PORT = int(os.getenv("REDIS_PORT"))
 USER_BOOK_TOPIC = os.getenv("USER_BOOK_TOPIC")
 USER_CANCEL_TOPIC = os.getenv("USER_CANCEL_TOPIC")
 ADMIN_CANCEL_TOPIC = os.getenv("ADMIN_CANCEL_TOPIC")

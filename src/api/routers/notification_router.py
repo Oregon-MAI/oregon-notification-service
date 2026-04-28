@@ -11,3 +11,7 @@ router = APIRouter(prefix="/notifications")
 @router.get("/{user_id}")
 async def notifications(user_id: UUID, request: Request) -> StreamingResponse:
     return StreamingResponse(get_notifications(user_id, request), media_type="text/event-stream")
+
+@router.post("/confirm/{message_id}")
+async def notifications(message_id: int, request: Request) -> str:
+    return ""
