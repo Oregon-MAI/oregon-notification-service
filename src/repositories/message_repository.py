@@ -25,3 +25,6 @@ async def delete_messages_by_user_id(user_id: UUID) -> None:
     keys = [key async for key in r.scan_iter(f"{user_id}:*")]
     if keys:
         await r.delete(*keys)
+
+async def delete_message_by_id(user_id: UUID, message_id: UUID) -> None:
+    await r.delete(f"{user_id}:{message_id}")

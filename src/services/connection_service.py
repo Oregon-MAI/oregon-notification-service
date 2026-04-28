@@ -21,8 +21,6 @@ async def get_notifications(user_id: UUID, request: Request) -> AsyncGenerator[s
     for msg in history:
         yield "data: " + msg.text + "\n\n"
 
-    await delete_messages_by_user_id(user_id)
-
     msgs = Queue()
     if user_id not in user_messages:
         user_messages[user_id] = []
