@@ -18,14 +18,14 @@ async def async_client() -> AsyncGenerator[AsyncClient]:
 
 
 @pytest.mark.asyncio
-async def test_notifications_endpoint_returns_streaming_response(
+async def test_notifications_endpoint_streaming_response(
     async_client: AsyncClient,
     mocker: MockerFixture,
 ) -> None:
     user_id = uuid.uuid4()
 
     async def mock_gen() -> AsyncGenerator[str]:
-        yield " Test Message\n\n"
+        yield "data: Test\n\n"
 
     mocker.patch(
         "src.api.routers.notification_router.get_notifications",
@@ -43,12 +43,11 @@ async def test_notifications_endpoint_invalid_uuid(
     async_client: AsyncClient,
 ) -> None:
     response = await async_client.get("/notifications/invalid-uuid")
-
     assert response.status_code == 422
 
 
 @pytest.mark.asyncio
-async def test_notifications_endpoint_service_called_with_correct_args(
+async def test_notifications_endpoint_calls_service(
     async_client: AsyncClient,
     mocker: MockerFixture,
 ) -> None:
@@ -56,40 +55,58 @@ async def test_notifications_endpoint_service_called_with_correct_args(
 
     async def empty_gen() -> AsyncGenerator[str]:
         return
-        yield
+        yield  # pragma: no cover
 
-    mock_get_notifications = mocker.patch(
+    mock_get = mocker.patch(
         "src.api.routers.notification_router.get_notifications",
         return_value=empty_gen(),
     )
 
     await async_client.get(f"/notifications/{user_id}")
 
-    mock_get_notifications.assert_called_once()
-    call_args = mock_get_notifications.call_args
-    assert call_args[0][0] == user_id
-    assert isinstance(call_args[0][1], Request)
+    mock_get.assert_called_once()
+    args, _ = mock_get.call_args
+    assert args[0] == user_id
+    assert isinstance(args[1], Request)
 
 
 @pytest.mark.asyncio
-async def test_notifications_endpoint_multiple_events(
+async def test_confirm_endpoint_success(
     async_client: AsyncClient,
     mocker: MockerFixture,
 ) -> None:
     user_id = uuid.uuid4()
+    message_id = uuid.uuid4()
 
-    async def mock_gen() -> AsyncGenerator[str]:
-        yield " First\n\n"
-        yield " Second\n\n"
-
-    mocker.patch(
-        "src.api.routers.notification_router.get_notifications",
-        return_value=mock_gen(),
+    mock_delete = mocker.patch(
+        "src.api.routers.notification_router.delete_message_by_id",
+        return_value=None,
     )
 
-    response = await async_client.get(f"/notifications/{user_id}")
+    response = await async_client.post(
+        f"/notifications/confirm/{user_id}/{message_id}"
+    )
 
     assert response.status_code == 200
-    content = await response.aread()
-    assert b" First" in content
-    assert b" Second" in content
+    # FastAPI по умолчанию сериализует str в JSON, поэтому "success" -> "\"success\""
+    assert response.json() == "success"
+    mock_delete.assert_called_once_with(user_id, message_id)
+
+
+@pytest.mark.asyncio
+async def test_confirm_endpoint_not_found(
+    async_client: AsyncClient,
+    mocker: MockerFixture,
+) -> None:
+    user_id = uuid.uuid4()
+    message_id = uuid.uuid4()
+
+    mocker.patch(
+        "src.api.routers.notification_router.delete_message_by_id",
+        side_effect=Exception("Not found"),
+    )
+
+    response = await async_client.post(f"/notifications/confirm/{user_id}/{message_id}")
+
+    assert response.status_code == 404
+    assert "wrong id" in response.json()["detail"]

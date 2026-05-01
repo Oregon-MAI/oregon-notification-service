@@ -1,3 +1,4 @@
+import logging
 from collections.abc import Awaitable, Callable
 from uuid import UUID
 
@@ -49,7 +50,7 @@ async def consume(topic: str) -> AIOKafkaConsumer:
 
 
 async def cons(topic: str) -> None:
-    print("topic: ", topic)
+    logging.info("topic: %s.", topic)
     consumer = await consume(topic)
     msg_parser = await matching(topic)
     try:
@@ -57,7 +58,7 @@ async def cons(topic: str) -> None:
             try:
                 msg = await create_message(message, msg_parser)
                 await insert_message(msg)
-                await send(UUID(str(msg.user_id)), str(msg.text))
+                await send(UUID(str(msg.user_id)), msg)
                 await consumer.commit()
 
             except Exception as e:
