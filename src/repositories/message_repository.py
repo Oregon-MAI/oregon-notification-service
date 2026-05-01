@@ -1,39 +1,35 @@
+import json
 from uuid import UUID
 
-from sqlalchemy import delete, select
-from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
+import redis.asyncio as redis
 
-from src.constants import DB_URL
+from src.constants import REDIS_PASS, REDIS_PORT, REDIS_URL
 from src.data.models.message import Message
 
-engine = create_async_engine(DB_URL, echo=True, future=True)
-
-async_session = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
-
-
-async def get_messages() -> list[Message]:
-    async with async_session() as session, session.begin():
-        result = await session.execute(select(Message).options())
-        return list(result.scalars().all())
-
-
-async def get_message(id: UUID) -> Message:
-    async with async_session() as session, session.begin():
-        result = await session.execute(select(Message).where(Message.id == id).options())
-        return result.scalar_one()
+r = redis.Redis(
+    host=str(REDIS_URL), port=REDIS_PORT, db=0, password=REDIS_PASS, decode_responses=True
+)
 
 
 async def get_messages_by_user_id(user_id: UUID) -> list[Message]:
-    async with async_session() as session, session.begin():
-        result = await session.execute(select(Message).where(Message.user_id == user_id))
-        return list(result.scalars().all())
+    msgs = []
+    keys = [key async for key in r.scan_iter(f"{user_id}:*")]
+    if keys:
+        for raw in await r.mget(keys):
+            if raw:
+                msgs.append(Message.from_dict(json.loads(raw)))
+    return msgs
 
 
 async def insert_message(new_message: Message) -> None:
-    async with async_session() as session, session.begin():
-        session.add(new_message)
+    await r.set(f"{new_message.user_id}:{new_message.id}", json.dumps(new_message.to_dict()))
 
 
 async def delete_messages_by_user_id(user_id: UUID) -> None:
-    async with async_session() as session, session.begin():
-        await session.execute(delete(Message).where(Message.user_id == user_id))
+    keys = [key async for key in r.scan_iter(f"{user_id}:*")]
+    if keys:
+        await r.delete(*keys)
+
+
+async def delete_message_by_id(user_id: UUID, message_id: UUID) -> None:
+    await r.delete(f"{user_id}:{message_id}")

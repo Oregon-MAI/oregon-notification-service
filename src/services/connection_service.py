@@ -1,40 +1,49 @@
+import asyncio
+import json
+import logging
 from asyncio import Queue
 from collections.abc import AsyncGenerator
 from uuid import UUID
 
 from fastapi import Request
 
-from src.repositories.message_repository import delete_messages_by_user_id, get_messages_by_user_id
+from src.data.models.message import Message
+from src.repositories.message_repository import get_messages_by_user_id
 
 user_messages: dict[UUID, list[Queue]] = {}
 
+lock = asyncio.Lock()
 
-async def send(user_id: UUID, message: str) -> None:
-    if user_id not in user_messages:
-        user_messages[user_id] = []
-    for q in user_messages[user_id]:
-        await q.put(message)
+
+async def send(user_id: UUID, message: Message) -> None:
+    async with lock:
+        if user_id not in user_messages:
+            user_messages[user_id] = []
+        for q in user_messages[user_id]:
+            await q.put(message)
+        logging.info("send: user_id=%s, message=%s.", user_id, message.to_dict())
 
 
 async def get_notifications(user_id: UUID, request: Request) -> AsyncGenerator[str]:
+    logging.info("get_notifications: user_id=%s.", user_id)
     history = await get_messages_by_user_id(user_id)
     for msg in history:
-        yield "data: " + msg.text + "\n\n"
-
-    await delete_messages_by_user_id(user_id)
+        yield "data: " + json.dumps(msg.to_dict()) + "\n\n"
 
     msgs = Queue()
-    if user_id not in user_messages:
-        user_messages[user_id] = []
-    user_messages[user_id].append(msgs)
+    async with lock:
+        if user_id not in user_messages:
+            user_messages[user_id] = []
+        user_messages[user_id].append(msgs)
 
     try:
         while True:
             if await request.is_disconnected():
                 break
-
-            msg = await msgs.get()
-            yield "data: " + msg + "\n\n"
+            async with lock:
+                msg = await msgs.get()
+                yield "data: " + json.dumps(msg.to_dict()) + "\n\n"
 
     finally:
-        user_messages[user_id].remove(msgs)
+        async with lock:
+            user_messages[user_id].remove(msgs)

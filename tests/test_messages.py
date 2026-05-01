@@ -1,36 +1,49 @@
-import asyncio
-import uuid
-from collections.abc import Generator
-from typing import Any
+import json
 from uuid import UUID
 
 import pytest
-from fastapi import Request
-from pytest_mock import MockerFixture
+from aiokafka import ConsumerRecord
 
-from src.data.models.message import Message
-from src.services.connection_service import get_notifications, send, user_messages
-from src.services.messages_service import create_message
+from src.services.messages_service import (
+    create_admin_cancel_message,
+    create_admin_update_message,
+    create_message,
+    create_messages_message,
+    create_user_book_message,
+    create_user_cancel_message,
+)
 
 
-@pytest.fixture(autouse=True)
-def cleanup_user_messages() -> Generator[None]:
-    yield
-    user_messages.clear()
+def _make_kafka_record(value: dict | None) -> ConsumerRecord:
+    return ConsumerRecord(
+        topic="test",
+        partition=0,
+        offset=0,
+        timestamp=0,
+        timestamp_type=0,
+        key=None,
+        value=json.dumps(value).encode() if value else None,
+        headers=[],
+        checksum=None,
+        serialized_key_size=-1,
+        serialized_value_size=-1,
+    )
 
 
 @pytest.mark.asyncio
 async def test_create_message_success() -> None:
-    data: dict[str, Any] = {
+    data = {
         "status": "active",
         "start_time": "10:00",
         "end_time": "11:00",
         "location": "Office",
         "type": "Meeting",
-        "name": "Sprint Planning",
+        "name": "Sprint",
         "to_user": "12345678-1234-1234-1234-123456789012",
     }
-    result = await create_message(data)
+    record = _make_kafka_record(data)
+
+    result = await create_message(record, create_user_book_message)
 
     assert isinstance(result.id, UUID)
     assert "Meeting" in result.text
@@ -38,97 +51,87 @@ async def test_create_message_success() -> None:
 
 
 @pytest.mark.asyncio
-async def test_create_message_default_values() -> None:
-    data: dict[str, Any] = {}
-    result = await create_message(data)
+async def test_create_message_none_value_raises() -> None:
+    record = _make_kafka_record(None)
 
-    assert result.text.startswith("Забронированно: , время: -")
+    with pytest.raises(ValueError):
+        await create_message(record, create_user_book_message)
+
+
+@pytest.mark.asyncio
+async def test_create_user_book_message_defaults() -> None:
+    data: dict = {}
+    result = await create_user_book_message(data)
+
     assert result.user_id == UUID("00000000-0000-0000-0000-000000000001")
+    assert "Забронированно:" in result.text
 
 
 @pytest.mark.asyncio
-async def test_send_adds_message_to_queue() -> None:
-    user_id = uuid.uuid4()
-    message_text = "Test Notification"
+async def test_create_user_cancel_message() -> None:
+    data = {
+        "to_user": "11111111-1111-1111-1111-111111111111",
+        "type": "Event",
+        "start_time": "09:00",
+        "end_time": "10:00",
+        "location": "Zoom",
+        "name": "Standup",
+    }
+    result = await create_user_cancel_message(data)
 
-    await send(user_id, message_text)
-
-    assert user_id in user_messages
-    assert len(user_messages[user_id]) == 0
-
-
-@pytest.mark.asyncio
-async def test_send_to_active_subscription() -> None:
-    user_id = uuid.uuid4()
-    message_text = "Active Sub Message"
-
-    queue: asyncio.Queue[str] = asyncio.Queue()
-    user_messages[user_id] = [queue]
-
-    await send(user_id, message_text)
-
-    assert not queue.empty()
-    received = await queue.get()
-    assert received == message_text
+    assert result.user_id == UUID("11111111-1111-1111-1111-111111111111")
+    assert "Event" in result.text
+    assert "status" not in result.text
 
 
 @pytest.mark.asyncio
-async def test_get_notifications_history_yield(
-    mocker: MockerFixture,
-) -> None:
-    user_id = uuid.uuid4()
-    mock_request = mocker.AsyncMock(spec=Request)
-    mock_request.is_disconnected.return_value = True
+async def test_create_admin_cancel_message() -> None:
+    data = {
+        "to_user": "22222222-2222-2222-2222-222222222222",
+        "status": "cancelled",
+        "type": "Booking",
+        "name": "Room A",
+        "start_time": "14:00",
+        "end_time": "15:00",
+        "location": "Building 1",
+    }
+    result = await create_admin_cancel_message(data)
 
-    mock_msg = mocker.MagicMock(spec=Message)
-    mock_msg.text = "History Message"
-
-    mocker.patch(
-        "src.services.connection_service.get_messages_by_user_id",
-        return_value=[mock_msg],
-    )
-    mocker.patch(
-        "src.services.connection_service.delete_messages_by_user_id",
-        return_value=None,
-    )
-
-    gen = get_notifications(user_id, mock_request)
-    result = await gen.__anext__()
-
-    assert result == "data: History Message\n\n"
+    assert "cancelled" in result.text
+    assert result.user_id == UUID("22222222-2222-2222-2222-222222222222")
 
 
 @pytest.mark.asyncio
-async def test_get_notifications_stream_and_cleanup(
-    mocker: MockerFixture,
-) -> None:
-    user_id = uuid.uuid4()
-    mock_request = mocker.AsyncMock(spec=Request)
+async def test_create_admin_update_message() -> None:
+    data = {
+        "to_user": "33333333-3333-3333-3333-333333333333",
+        "what_update": "time changed",
+        "type": "Meeting",
+        "name": "Review",
+        "start_time": "16:00",
+        "end_time": "17:00",
+        "location": "HQ",
+        "status": "updated",
+    }
+    result = await create_admin_update_message(data)
 
-    mock_request.is_disconnected.side_effect = [False, True]
+    assert "time changed" in result.text
+    assert "updated" in result.text
 
-    mocker.patch(
-        "src.services.connection_service.get_messages_by_user_id",
-        return_value=[],
-    )
-    mocker.patch(
-        "src.services.connection_service.delete_messages_by_user_id",
-        return_value=None,
-    )
 
-    async def run_gen() -> str:
-        async for item in get_notifications(user_id, mock_request):
-            return item
-        return ""
+@pytest.mark.asyncio
+async def test_create_messages_message_with_flag() -> None:
+    data = {
+        "to_user": "44444444-4444-4444-4444-444444444444",
+        "flag": "urgent",
+        "type": "Alert",
+        "name": "System",
+        "start_time": "00:00",
+        "end_time": "23:59",
+        "location": "Cloud",
+        "status": "active",
+    }
+    result = await create_messages_message(data)
 
-    task = asyncio.create_task(run_gen())
-
-    await asyncio.sleep(0.01)
-
-    await send(user_id, "New Message")
-
-    try:
-        result = await asyncio.wait_for(task, timeout=1.0)
-        assert "data: New Message" in result
-    except TimeoutError:
-        pytest.fail("Генератор не получил сообщение вовремя")
+    assert "urgent" in result.text
+    assert "флаг: urgent" in result.text or "flag: urgent" in result.text
