@@ -83,9 +83,7 @@ async def test_confirm_endpoint_success(
         return_value=None,
     )
 
-    response = await async_client.post(
-        f"/notifications/confirm/{user_id}/{message_id}"
-    )
+    response = await async_client.post(f"/notifications/confirm/{user_id}/{message_id}")
 
     assert response.status_code == 200
     # FastAPI по умолчанию сериализует str в JSON, поэтому "success" -> "\"success\""

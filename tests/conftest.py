@@ -17,6 +17,7 @@ def async_iter(items: list[Any]) -> AsyncIterator[Any]:
     async def _iter() -> AsyncIterator[Any]:
         for item in items:
             yield item
+
     return _iter()
 
 
@@ -48,17 +49,9 @@ def mock_redis_methods(mocker: MockerFixture) -> dict[str, AsyncMock | MagicMock
     from src.repositories import message_repository
 
     mocks: dict[str, AsyncMock | MagicMock] = {
-        "scan_iter": mocker.patch.object(
-            message_repository.r, "scan_iter", new_callable=MagicMock
-        ),
-        "mget": mocker.patch.object(
-            message_repository.r, "mget", new_callable=AsyncMock
-        ),
-        "set": mocker.patch.object(
-            message_repository.r, "set", new_callable=AsyncMock
-        ),
-        "delete": mocker.patch.object(
-            message_repository.r, "delete", new_callable=AsyncMock
-        ),
+        "scan_iter": mocker.patch.object(message_repository.r, "scan_iter", new_callable=MagicMock),
+        "mget": mocker.patch.object(message_repository.r, "mget", new_callable=AsyncMock),
+        "set": mocker.patch.object(message_repository.r, "set", new_callable=AsyncMock),
+        "delete": mocker.patch.object(message_repository.r, "delete", new_callable=AsyncMock),
     }
     return mocks

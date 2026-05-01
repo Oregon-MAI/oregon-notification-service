@@ -17,8 +17,8 @@ from tests.conftest import async_iter
 
 @pytest.mark.asyncio
 async def test_get_messages_by_user_id_empty(
-        mocker: MockerFixture,
-        mock_redis_methods: dict[str, AsyncMock | MagicMock],
+    mocker: MockerFixture,
+    mock_redis_methods: dict[str, AsyncMock | MagicMock],
 ) -> None:
     user_id = uuid4()
 
@@ -33,8 +33,8 @@ async def test_get_messages_by_user_id_empty(
 
 @pytest.mark.asyncio
 async def test_get_messages_by_user_id_with_data(
-        mocker: MockerFixture,
-        mock_redis_methods: dict[str, AsyncMock | MagicMock],
+    mocker: MockerFixture,
+    mock_redis_methods: dict[str, AsyncMock | MagicMock],
 ) -> None:
     user_id = uuid4()
     msg_id = uuid4()
@@ -53,8 +53,8 @@ async def test_get_messages_by_user_id_with_data(
 
 @pytest.mark.asyncio
 async def test_insert_message(
-        mocker: MockerFixture,
-        mock_redis_methods: dict[str, AsyncMock | MagicMock],
+    mocker: MockerFixture,
+    mock_redis_methods: dict[str, AsyncMock | MagicMock],
 ) -> None:
     user_id = uuid4()
     msg_id = uuid4()
@@ -63,15 +63,13 @@ async def test_insert_message(
     await insert_message(message)
 
     expected_key = f"{user_id}:{msg_id}"
-    mock_redis_methods["set"].assert_called_once_with(
-        expected_key, json.dumps(message.to_dict())
-    )
+    mock_redis_methods["set"].assert_called_once_with(expected_key, json.dumps(message.to_dict()))
 
 
 @pytest.mark.asyncio
 async def test_delete_message_by_id(
-        mocker: MockerFixture,
-        mock_redis_methods: dict[str, AsyncMock | MagicMock],
+    mocker: MockerFixture,
+    mock_redis_methods: dict[str, AsyncMock | MagicMock],
 ) -> None:
     user_id = uuid4()
     msg_id = uuid4()
@@ -83,8 +81,8 @@ async def test_delete_message_by_id(
 
 @pytest.mark.asyncio
 async def test_delete_messages_by_user_id_empty(
-        mocker: MockerFixture,
-        mock_redis_methods: dict[str, AsyncMock | MagicMock],
+    mocker: MockerFixture,
+    mock_redis_methods: dict[str, AsyncMock | MagicMock],
 ) -> None:
     user_id = uuid4()
 
@@ -98,8 +96,8 @@ async def test_delete_messages_by_user_id_empty(
 
 @pytest.mark.asyncio
 async def test_delete_messages_by_user_id_with_keys(
-        mocker: MockerFixture,
-        mock_redis_methods: dict[str, AsyncMock | MagicMock],
+    mocker: MockerFixture,
+    mock_redis_methods: dict[str, AsyncMock | MagicMock],
 ) -> None:
     user_id = uuid4()
     keys = [f"{user_id}:msg1", f"{user_id}:msg2"]
