@@ -26,9 +26,6 @@ async def send(user_id: UUID, message: Message) -> None:
 
 async def get_notifications(user_id: UUID, request: Request) -> AsyncGenerator[str]:
     logging.info("get_notifications: user_id=%s.", user_id)
-    history = await get_messages_by_user_id(user_id)
-    for msg in history:
-        yield "data: " + json.dumps(msg.to_dict()) + "\n\n"
 
     msgs = Queue()
     async with lock:
@@ -36,13 +33,16 @@ async def get_notifications(user_id: UUID, request: Request) -> AsyncGenerator[s
             user_messages[user_id] = []
         user_messages[user_id].append(msgs)
 
+    history = await get_messages_by_user_id(user_id)
+    for msg in history:
+        yield "data: " + json.dumps(msg.to_dict()) + "\n\n"
+
     try:
         while True:
             if await request.is_disconnected():
                 break
-            async with lock:
-                msg = await msgs.get()
-                yield "data: " + json.dumps(msg.to_dict()) + "\n\n"
+            msg = await msgs.get()
+            yield "data: " + json.dumps(msg.to_dict()) + "\n\n"
 
     finally:
         async with lock:
