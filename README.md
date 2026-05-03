@@ -1,19 +1,31 @@
-# oregon-python-template
+# oregon-notification-service
 
-## Ci
+### Эндпоинты
 
-### lint-test:
+1. GET /notifications/{user_id} 
+  Устанавливает SSE-соединение. Отправляет уведомдения реальном времени.
+2. POST /notifications/confirm/{user_id}/{message_id}
+  Подтверждает прочтение пользователем уведомления.
 
-Линтеры и type checkrs:
-- ruff
-- ty
+### Структура
 
-Для тестов используеться pytest. Проверяеться покрытие тестами. **Порого 80%**
+<pre>
+    ├── api/
+    │   └── routers/
+            ├── notification_router.py 
+    ├── consumers/
+            ├── consumer.py 
+    ├── data/
+    │   └── models/   
+            ├── message.py 
+    ├── repositories/
+            ├── message_repository.py 
+    ├── services/
+    │   ├── background_service.py  
+    │   ├── connection_service.py  
+    │   └── messages_service.py   
+    ├── constants.py 
+    └── main.py               
+</pre>
 
-### docker-push/docker-build
-
-docker-push - просиходит после коммита в main. Просиходит сборка образа и отпрвка его в ghcr.io. **Обязательное условие этот public repo** инче не сможем все собрать в docker-compose. **Dockerfile ожидаем в /**
-
-## Пакетный менеждер
-
-Используеться uv. Все бибдиотеки нужные для ci лежат в группе dev.
+Также в репозитории находятся 4 юнит теста, обеспечивающие покрытие >80%.
