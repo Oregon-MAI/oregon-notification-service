@@ -1,4 +1,16 @@
 services:
+
+  postgres-notification-service:
+    image: postgres:latest
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: root
+      POSTGRES_DB: postgres
+    command: [ "postgres", "-p", "5432" ]
+
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
     environment:
@@ -36,6 +48,7 @@ services:
     depends_on:
       - redis
       - kafka
+      - postgres-notification-service
     environment:
       - REDIS_PASS=redispass
       - REDIS_URL=redis
@@ -45,4 +58,6 @@ services:
       - USER_CANCEL_TOPIC=user.cancel
       - ADMIN_CANCEL_TOPIC=admin.cancel
       - ADMIN_UPDATE_TOPIC=admin.update
-      - MESSAGES_TOPIC=messages
+      - MESSAGES_TOPIC_START=messages
+      - MESSAGES_TOPIC_END=messages
+      - DATABASE_URL=postgresql+asyncpg://postgres:root@postgres-notification-service:5432/postgres

@@ -1,4 +1,5 @@
 import logging
+import uuid
 from collections.abc import Awaitable, Callable
 from uuid import UUID
 
@@ -13,7 +14,9 @@ from src.constants import (
     USER_CANCEL_TOPIC,
 )
 from src.data.models.message import Message
+from src.data.models.send import Send
 from src.repositories.message_repository import insert_message
+from src.repositories.send_repository import get_send_by_hash, insert_send
 from src.services.connection_service import send
 from src.services.messages_service import (
     create_admin_cancel_message,
@@ -57,6 +60,12 @@ async def cons(topic: str) -> None:
         async for message in consumer:
             try:
                 msg = await create_message(message, msg_parser)
+                hash_ms = hash(msg)
+                snd = await get_send_by_hash(str(hash_ms))
+                if snd is not None:
+                    continue
+                send_ms = Send(uuid.uuid4(), str(hash_ms))
+                await insert_send(send_ms)
                 await insert_message(msg)
                 await send(UUID(str(msg.user_id)), msg)
                 await consumer.commit()
