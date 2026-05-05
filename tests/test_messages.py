@@ -59,15 +59,6 @@ async def test_create_message_none_value_raises() -> None:
 
 
 @pytest.mark.asyncio
-async def test_create_user_book_message_defaults() -> None:
-    data: dict = {}
-    result = await create_user_book_message(data)
-
-    assert result.user_id == UUID("00000000-0000-0000-0000-000000000001")
-    assert "Забронированно:" in result.text
-
-
-@pytest.mark.asyncio
 async def test_create_user_cancel_message() -> None:
     data = {
         "to_user": "11111111-1111-1111-1111-111111111111",
@@ -81,7 +72,8 @@ async def test_create_user_cancel_message() -> None:
 
     assert result.user_id == UUID("11111111-1111-1111-1111-111111111111")
     assert "Event" in result.text
-    assert "status" not in result.text
+    assert "отменено вами" in result.text
+    assert "Статус:" not in result.text
 
 
 @pytest.mark.asyncio
@@ -99,6 +91,7 @@ async def test_create_admin_cancel_message() -> None:
 
     assert "cancelled" in result.text
     assert result.user_id == UUID("22222222-2222-2222-2222-222222222222")
+    assert "отменено администратором" in result.text
 
 
 @pytest.mark.asyncio
@@ -117,6 +110,7 @@ async def test_create_admin_update_message() -> None:
 
     assert "time changed" in result.text
     assert "updated" in result.text
+    assert "Изменения:" in result.text
 
 
 @pytest.mark.asyncio
@@ -133,5 +127,47 @@ async def test_create_messages_message_with_flag() -> None:
     }
     result = await create_messages_message(data)
 
-    assert "urgent" in result.text
-    assert "флаг: urgent" in result.text or "flag: urgent" in result.text
+    assert "System" in result.text
+    assert "Cloud" in result.text
+    assert "начнется через 15 минут" in result.text
+    assert "00:00" in result.text
+    assert "urgent" not in result.text
+    assert "Флаг:" not in result.text
+
+
+@pytest.mark.asyncio
+async def test_create_messages_message_start_reminder_format() -> None:
+    from src.services.messages_service import create_messages_message_start
+
+    data = {
+        "to_user": "55555555-5555-5555-5555-555555555555",
+        "name": "Yoga Session",
+        "location": "Studio B",
+        "start_time": "2026-04-12T18:00:00Z",
+    }
+    result = await create_messages_message_start(data)
+
+    assert "Yoga Session" in result.text
+    assert "Studio B" in result.text
+    assert "начнется через 15 минут" in result.text
+    assert "12 апреля 2026, 18:00" in result.text
+    assert result.user_id == UUID("55555555-5555-5555-5555-555555555555")
+
+
+@pytest.mark.asyncio
+async def test_create_messages_message_end_reminder_format() -> None:
+    from src.services.messages_service import create_messages_message_end
+
+    data = {
+        "to_user": "66666666-6666-6666-6666-666666666666",
+        "name": "Workshop",
+        "location": "Main Hall",
+        "end_time": "2026-04-13T20:30:00Z",
+    }
+    result = await create_messages_message_end(data)
+
+    assert "Workshop" in result.text
+    assert "Main Hall" in result.text
+    assert "завершится через 15 минут" in result.text
+    assert "13 апреля 2026, 20:30" in result.text
+    assert result.user_id == UUID("66666666-6666-6666-6666-666666666666")

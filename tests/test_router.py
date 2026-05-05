@@ -2,7 +2,6 @@ import uuid
 from collections.abc import AsyncGenerator
 
 import pytest
-import pytest_asyncio
 from fastapi import Request
 from httpx import ASGITransport, AsyncClient
 from pytest_mock import MockerFixture
@@ -10,7 +9,7 @@ from pytest_mock import MockerFixture
 from src.main import app
 
 
-@pytest_asyncio.fixture(scope="function")
+@pytest.fixture(scope="function")
 async def async_client() -> AsyncGenerator[AsyncClient]:
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -86,7 +85,6 @@ async def test_confirm_endpoint_success(
     response = await async_client.post(f"/notifications/confirm/{user_id}/{message_id}")
 
     assert response.status_code == 200
-    # FastAPI по умолчанию сериализует str в JSON, поэтому "success" -> "\"success\""
     assert response.json() == "success"
     mock_delete.assert_called_once_with(user_id, message_id)
 

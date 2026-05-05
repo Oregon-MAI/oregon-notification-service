@@ -1,4 +1,5 @@
 import asyncio
+import os
 import sys
 from collections.abc import AsyncIterator, Generator
 from pathlib import Path
@@ -13,12 +14,39 @@ if str(root_dir) not in sys.path:
     sys.path.insert(0, str(root_dir))
 
 
+def pytest_configure(config: pytest.Config) -> None:
+    db_url = (
+        os.getenv("DATABASE_URL")
+        or os.getenv("TEST_DATABASE_URL")
+        or "sqlite+aiosqlite:///:memory:"
+    )
+    os.environ["DATABASE_URL"] = db_url
+
+    if "src.constants" in sys.modules:
+        import importlib
+
+        import src.constants
+
+        importlib.reload(src.constants)
+
+
 def async_iter(items: list[Any]) -> AsyncIterator[Any]:
+
     async def _iter() -> AsyncIterator[Any]:
         for item in items:
             yield item
 
     return _iter()
+
+
+@pytest.fixture(autouse=True)
+def mock_send_repository() -> Generator[dict[str, MagicMock]]:
+    with (
+        patch("src.repositories.send_repository.get_send_by_hash") as mock_get,
+        patch("src.repositories.send_repository.insert_send") as mock_insert,
+    ):
+        mock_get.return_value = None
+        yield {"get": mock_get, "insert": mock_insert}
 
 
 @pytest.fixture(autouse=True)
@@ -45,7 +73,9 @@ def mock_lock() -> Generator[MagicMock]:
 
 
 @pytest.fixture
-def mock_redis_methods(mocker: MockerFixture) -> dict[str, AsyncMock | MagicMock]:
+def mock_redis_methods(
+    mocker: MockerFixture,
+) -> dict[str, AsyncMock | MagicMock]:
     from src.repositories import message_repository
 
     mocks: dict[str, AsyncMock | MagicMock] = {

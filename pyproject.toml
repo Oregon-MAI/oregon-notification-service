@@ -17,6 +17,7 @@ dependencies = [
     "sqlalchemy>=2.0.0",
     "sse-starlette>=3.3.4",
     "uvicorn>=0.44.0",
+    "aiosqlite>=0.20.0",
 ]
 
 [dependency-groups]
