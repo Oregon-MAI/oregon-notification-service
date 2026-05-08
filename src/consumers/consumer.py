@@ -65,15 +65,17 @@ async def cons(topic: str) -> None:
             try:
                 msg = await create_message(message, msg_parser)
                 hash_ms = hash(msg)
+                logging.info(str("get message: " + str(msg.to_dict())))
                 snd = await get_send_by_hash(str(hash_ms))
                 if snd is not None:
                     continue
+                logging.info(str("get unique message: " + str(msg.to_dict())))
                 send_ms = Send(uuid.uuid4(), str(hash_ms))
                 await insert_send(send_ms)
                 await insert_message(msg)
                 await send(UUID(str(msg.user_id)), msg)
+                logging.info(str("send unique message: " + str(msg.to_dict())))
                 await consumer.commit()
-
             except Exception as e:
                 print(e)
     except Exception as e:
