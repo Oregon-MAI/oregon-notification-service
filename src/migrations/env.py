@@ -16,7 +16,10 @@ from src.data.models.send import Send
 config = context.config
 
 section = config.config_ini_section
-database_url:str = os.getenv("DATABASE_URL",'')
+database_url = os.getenv("DATABASE_URL")
+
+if not database_url:
+    raise ValueError("DATABASE_URL is not set")
 config.set_section_option(section, "sqlalchemy.url", database_url)
 
 # Interpret the config file for Python logging.
