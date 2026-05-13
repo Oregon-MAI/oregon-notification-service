@@ -42,10 +42,4 @@ COPY . .
 
 EXPOSE 8003
 
-CMD ["sh", "-c", "\
-alembic -c src/alembic.ini revision --autogenerate -m 'auto_migration' || true && \
-alembic -c src/alembic.ini upgrade head && \
-sleep 10 && \
-uvicorn src.main:app --host 0.0.0.0 --port 8003 && \
-sleep 20\
-"]
+CMD ["sh", "-c", "alembic -c src/alembic.ini upgrade head && uvicorn src.main:app --host 0.0.0.0 --port 8003"]
