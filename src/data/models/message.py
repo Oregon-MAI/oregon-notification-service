@@ -5,6 +5,7 @@ class Message:
     """
     Модель уведомления с идентификатором, текстом и ID пользователя
     """
+
     id: uuid.UUID
     text: str
     user_id: uuid.UUID

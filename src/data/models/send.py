@@ -10,6 +10,7 @@ class Send(Base):
     """
     модель для отслеживания отправленных сообщений
     """
+
     __tablename__ = "sends"
     id = Column(UUID(as_uuid=True), primary_key=True, index=True, default=uuid4)
     hash = Column(Text, index=True, nullable=False)
