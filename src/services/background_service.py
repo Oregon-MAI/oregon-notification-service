@@ -10,6 +10,10 @@ from src.consumers.consumer import cons
 
 @asynccontextmanager
 async def background(app: FastAPI) -> AsyncIterator[None]:
+    """
+    Запуска фоновых задач консюмеров Kafka при старте приложения
+    :return: AsyncIterator
+    """
     print(app.version)
     tasks = [asyncio.create_task(cons(str(el))) for el in CONSUME_TOPICS]
     yield

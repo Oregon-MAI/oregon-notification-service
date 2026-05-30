@@ -12,17 +12,29 @@ async_session = async_sessionmaker(bind=engine, class_=AsyncSession, expire_on_c
 
 
 async def get_send(id: UUID) -> Send | None:
+    """
+    Получает запись об отправке по id из бд
+    :return: объект Send или None
+    """
     async with async_session() as session, session.begin():
-        result = await session.execute(select(Send).where(Send.id == id).options())
-        return result.scalar_one()
+        result = await session.execute(select(Send).where(Send.id == id))
+        return result.scalar_one_or_none()
 
 
 async def get_send_by_hash(hash_value: str) -> Send | None:
+    """
+    Получает запись об отправке по хешу сообщения из бд
+    :return: объект Send или None
+    """
     async with async_session() as session:
         result = await session.execute(select(Send).where(Send.hash == hash_value))
         return result.scalar_one_or_none()
 
 
 async def insert_send(new_message: Send) -> None:
+    """
+    Сохраняет запись об отправке в бд
+    :return: None
+    """
     async with async_session() as session, session.begin():
         session.add(new_message)
