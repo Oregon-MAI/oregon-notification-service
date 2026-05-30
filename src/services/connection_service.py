@@ -16,6 +16,10 @@ lock = asyncio.Lock()
 
 
 async def send(user_id: UUID, message: Message) -> None:
+    """
+    Отправляет уведомление всем активным пользователям
+    :return: None
+    """
     async with lock:
         if user_id not in user_messages:
             user_messages[user_id] = []
@@ -25,6 +29,10 @@ async def send(user_id: UUID, message: Message) -> None:
 
 
 async def get_notifications(user_id: UUID, request: Request) -> AsyncGenerator[str]:
+    """
+    Отправляет историю и новые уведомления в реальном времени
+    :return: AsyncGenerator
+    """
     logging.info("get_notifications: user_id=%s.", user_id)
 
     msgs = Queue()
@@ -46,4 +54,5 @@ async def get_notifications(user_id: UUID, request: Request) -> AsyncGenerator[s
 
     finally:
         async with lock:
-            user_messages[user_id].remove(msgs)
+            if user_id in user_messages and msgs in user_messages[user_id]:
+                user_messages[user_id].remove(msgs)

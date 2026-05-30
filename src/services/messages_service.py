@@ -11,6 +11,10 @@ from src.data.models.message import Message
 
 
 def time_parse(iso_str: str) -> str:
+    """
+    Форматирует дату
+    :return: строка с датой в формате "день месяц год, часы:минуты"
+    """
     try:
         dt = datetime.fromisoformat(iso_str.replace("Z", "+00:00"))
         return f"{dt.day} {MONTHS[dt.month - 1]} {dt.year}, {dt.strftime('%H:%M')}"
@@ -22,6 +26,10 @@ async def create_message(
     data: ConsumerRecord,
     func: Callable[[Mapping[str, str | None]], Awaitable[Message]],
 ) -> Message:
+    """
+    Парсит сообщение из Kafka и преобразует в объект Message через переданную функцию
+    :return: Message
+    """
     if data.value is None:
         raise ValueError
     try:
@@ -34,6 +42,10 @@ async def create_message(
 
 
 async def create_user_book_message(data: Mapping[str, str | None]) -> Message:
+    """
+    Создаёт уведомление об успешном бронировании от имени пользователя
+    :return: объект Message с текстом подтверждения
+    """
     to_user = UUID(data.get("to_user"))
     status = data.get("status", "подтверждено")
     time_range = (
@@ -48,6 +60,10 @@ async def create_user_book_message(data: Mapping[str, str | None]) -> Message:
 
 
 async def create_user_cancel_message(data: Mapping[str, str | None]) -> Message:
+    """
+    Создаёт уведомление об отмене бронирования пользователем
+    :return: объект Message с текстом об отмене
+    """
     to_user = UUID(data.get("to_user"))
     time_range = (
         f"{time_parse(str(data.get('start_time')))} - {time_parse(str(data.get('end_time')))}"
@@ -61,6 +77,10 @@ async def create_user_cancel_message(data: Mapping[str, str | None]) -> Message:
 
 
 async def create_admin_cancel_message(data: Mapping[str, str | None]) -> Message:
+    """
+    Создаёт уведомление об отмене бронирования администратором
+    :return: объект Message с текстом об отмене администратором
+    """
     to_user = UUID(data.get("to_user"))
     status = data.get("status", "отменено")
     time_range = (
@@ -75,6 +95,10 @@ async def create_admin_cancel_message(data: Mapping[str, str | None]) -> Message
 
 
 async def create_admin_update_message(data: Mapping[str, str | None]) -> Message:
+    """
+    Создаёт уведомление об обновлении бронирования администратором
+    :return: объект Message с текстом об обновлении
+    """
     to_user = UUID(data.get("to_user"))
     status = data.get("status", "обновлено")
     time_range = (
@@ -90,6 +114,10 @@ async def create_admin_update_message(data: Mapping[str, str | None]) -> Message
 
 
 async def create_messages_message_start(data: Mapping[str, str | None]) -> Message:
+    """
+    Создаёт напоминание о предстоящем начале бронирования
+    :return: объект Message с текстом напоминания о начале
+    """
     to_user = UUID(data.get("to_user"))
     start_time = time_parse(str(data.get("start_time")))
     location = data.get("location", "не указана")
@@ -100,6 +128,10 @@ async def create_messages_message_start(data: Mapping[str, str | None]) -> Messa
 
 
 async def create_messages_message_end(data: Mapping[str, str | None]) -> Message:
+    """
+    Создаёт напоминание о предстоящем окончании бронирования
+    :return: объект Message с текстом напоминания об окончании
+    """
     to_user = UUID(data.get("to_user"))
     end_time = time_parse(str(data.get("end_time")))
     location = data.get("location", "не указана")
@@ -110,4 +142,8 @@ async def create_messages_message_end(data: Mapping[str, str | None]) -> Message
 
 
 async def create_messages_message(data: Mapping[str, str | None]) -> Message:
+    """
+    Делегирует создание сообщения функции обработчика начала
+    :return: объект Message
+    """
     return await create_messages_message_start(data)

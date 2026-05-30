@@ -12,6 +12,10 @@ r = redis.Redis(
 
 
 async def get_messages_by_user_id(user_id: UUID) -> list[Message]:
+    """
+    Получает все уведомления пользователя из Redis
+    :return: список объектов Message
+    """
     msgs = []
     keys = [key async for key in r.scan_iter(f"{user_id}:*")]
     if keys:
@@ -22,14 +26,26 @@ async def get_messages_by_user_id(user_id: UUID) -> list[Message]:
 
 
 async def insert_message(new_message: Message) -> None:
+    """
+    Сохраняет новое уведомление в Redis
+    :return: None
+    """
     await r.set(f"{new_message.user_id}:{new_message.id}", json.dumps(new_message.to_dict()))
 
 
 async def delete_messages_by_user_id(user_id: UUID) -> None:
+    """
+    Удаляет все уведомления пользователя из Redis
+    :return: None
+    """
     keys = [key async for key in r.scan_iter(f"{user_id}:*")]
     if keys:
         await r.delete(*keys)
 
 
 async def delete_message_by_id(user_id: UUID, message_id: UUID) -> None:
+    """
+    Удаляет уведомление по id из Redis
+    :return: None
+    """
     await r.delete(f"{user_id}:{message_id}")

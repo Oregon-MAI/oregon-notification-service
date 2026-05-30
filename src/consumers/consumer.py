@@ -31,6 +31,10 @@ from src.services.messages_service import (
 
 
 async def matching(topic: str) -> Callable[[Mapping[str, str | None]], Awaitable[Message]]:
+    """
+    Возвращает функцию-парсер для соответствующего топика Kafka
+    :return: асинхронная функция, преобразующая данные в объект Message
+    """
     if topic == USER_BOOK_TOPIC:
         return create_user_book_message
     if topic == USER_CANCEL_TOPIC:
@@ -45,6 +49,10 @@ async def matching(topic: str) -> Callable[[Mapping[str, str | None]], Awaitable
 
 
 async def consume(topic: str) -> AIOKafkaConsumer:
+    """
+    Создаёт и запускает Kafka consumer для указанного топика
+    :return: экземпляр AIOKafkaConsumer в запущенном состоянии
+    """
     consumer = AIOKafkaConsumer(
         topic,
         bootstrap_servers=KAFKA_BOOTSTRAP_SERVERS,
@@ -57,6 +65,10 @@ async def consume(topic: str) -> AIOKafkaConsumer:
 
 
 async def cons(topic: str) -> None:
+    """
+    Основной цикл потребления сообщений из топика Kafka с обработкой и отправкой уведомлений
+    :return: None
+    """
     logging.info("topic: %s.", topic)
     consumer = await consume(topic)
     msg_parser = await matching(topic)
